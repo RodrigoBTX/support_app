@@ -102,7 +102,14 @@ reflete exatamente o que os teus SPs devolverem da base de dados real.
 - Os mockups aprovados (estáticos, só para referência visual) estão em
   `docs/mockups/` — não fazem parte do código da app, servem de guia de
   design ao implementares os componentes reais.
-- Dúvidas em aberto que ainda vale a pena fechar (não bloqueiam o
-  desenvolvimento atual): duração da sessão/token, origem dos QR codes dos
-  equipamentos, e a escolha entre Cloudflare Tunnel ou DynDNS para o acesso
-  externo de cada cliente.
+- **Sessão:** sem expiração — o técnico só é desligado com "Terminar sessão"
+  manual no Perfil.
+- **QR codes:** os códigos dos equipamentos já existem no sistema do
+  cliente; a app só os lê (não gera nem imprime etiquetas). O leitor
+  (`app/src/screens/LeitorQRScreen.tsx`) passa o valor lido diretamente como
+  `Codigo` a `sp_ObterEquipamento` — se o formato real dos códigos vier a ser
+  diferente de um simples texto (ex: incluir um prefixo ou ser parte de um
+  URL), é só ajustar essa passagem de valor, o resto mantém-se.
+- **Acesso externo:** decidido usar HTTP simples (sem HTTPS) via DynDNS +
+  port-forwarding — ver `docs/ARQUITETURA.md`. A app já está preparada para
+  aceitar tráfego HTTP em Android e iOS.

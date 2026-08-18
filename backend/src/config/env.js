@@ -12,7 +12,10 @@ module.exports = {
   api: {
     port: Number(process.env.API_PORT || 4000),
     jwtSecret: required('API_JWT_SECRET'),
-    jwtExpiresIn: process.env.API_JWT_EXPIRES_IN || '7d',
+    // Vazio por omissão = sessão sem expiração (decisão do projeto: mantém-se
+    // válida até logout manual). Define API_JWT_EXPIRES_IN no .env (ex: "7d")
+    // se um dia quiseres passar a expirar.
+    jwtExpiresIn: process.env.API_JWT_EXPIRES_IN || '',
   },
   sql: {
     server: required('SQL_SERVER'),

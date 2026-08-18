@@ -10,11 +10,17 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "pt.empresa.suporteapp"
+      "bundleIdentifier": "pt.empresa.suporteapp",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
     },
     "android": {
       "package": "pt.empresa.suporteapp",
-      "permissions": ["CAMERA"]
+      "permissions": ["CAMERA"],
+      "usesCleartextTraffic": true
     },
     "plugins": ["expo-secure-store"]
   }

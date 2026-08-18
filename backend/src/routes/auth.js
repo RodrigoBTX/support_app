@@ -41,10 +41,13 @@ router.post('/login', async (req, res) => {
       PushToken: { type: sql.NVarChar(300), value: pushToken || null },
     });
 
+    // Sessão simples: sem expiração por definição (ver api.jwtExpiresIn no .env).
+    // O único fim de sessão é o "Terminar sessão" manual no ecrã de Perfil.
+    const opcoesToken = api.jwtExpiresIn ? { expiresIn: api.jwtExpiresIn } : {};
     const token = jwt.sign(
       { username: utilizador.Username, tecnicoId: utilizador.TecnicoId, nome: utilizador.Nome },
       api.jwtSecret,
-      { expiresIn: api.jwtExpiresIn }
+      opcoesToken
     );
 
     res.json({ token, utilizador: { nome: utilizador.Nome, tecnicoId: utilizador.TecnicoId } });

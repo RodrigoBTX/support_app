@@ -4,10 +4,10 @@
 
 Uma instalação por cliente. Cada cliente tem a sua própria API a correr no seu
 próprio servidor Windows, ligada ao seu próprio SQL Server. A app móvel nunca
-fala diretamente com o SQL Server — fala sempre com a API via HTTPS.
+fala diretamente com o SQL Server — fala sempre com a API.
 
 ```
-[App Android/iOS] --HTTPS--> [API Node/Express no servidor do cliente] --SPs--> [SQL Server do cliente]
+[App Android/iOS] --HTTP--> [API Node/Express no servidor do cliente] --SPs--> [SQL Server do cliente]
                                         |
                                         +--> pasta local (fotos/assinaturas)
                                         +--> backoffice web (health, SPs, dispositivos, logs)
@@ -60,11 +60,16 @@ Server Agent disponível.
 
 ## Autenticação
 
-Login por utilizador/password (validado via `sp_ValidarUtilizador`), devolve
-um JWT que a app guarda em `SecureStore` e envia em todos os pedidos
-seguintes (`Authorization: Bearer ...`). Duração do token definida em
-`API_JWT_EXPIRES_IN` no `.env` — **por decidir**: expira ao fim de X dias, ou
-sessão longa até logout manual (ver dúvidas em aberto no README).
+Login por utilizador/password (validado via `sp_ValidarUtilizador` — a tabela
+de onde vêm as credenciais é decidida dentro do próprio SP, a API não sabe
+nem precisa de saber qual é), devolve um JWT que a app guarda em
+`SecureStore` e envia em todos os pedidos seguintes (`Authorization: Bearer
+...`).
+
+**Decisão:** sessão sem expiração — o token fica válido indefinidamente até
+o técnico fazer logout manual no ecrã de Perfil. É o comportamento por
+omissão (`API_JWT_EXPIRES_IN` vazio no `.env`); se um dia quiseres passar a
+expirar sessões, basta preencher essa variável (ex: `7d`).
 
 ## Backoffice
 
@@ -77,14 +82,25 @@ com filtros e detalhe de parâmetros por clique.
 
 ## Acesso externo (API do cliente acessível pela app fora da rede local)
 
-Duas opções em cima da mesa, ainda por decidir caso a caso por cliente:
+**Decisão:** os dados não precisam de estar protegidos por HTTPS — prioridade
+é não complicar a utilização da app (sem certificados para gerir, sem erros
+de "ligação não segura" a resolver por cliente). A app comunica em **HTTP
+simples** com a API.
 
-1. **DynDNS + port-forwarding** — mais simples de entender, mas expõe uma
-   porta do servidor do cliente diretamente à internet; exige HTTPS a sério
-   (não certificados autoassinados) e firewall bem configurado.
-2. **Cloudflare Tunnel** (recomendado) — não é preciso abrir nenhuma porta no
-   router do cliente, HTTPS tratado automaticamente, mais seguro e mais fácil
-   de replicar de instalação em instalação.
+Caminho mais direto: **DynDNS + port-forwarding** no router do cliente,
+apontando para a porta da API (`API_PORT`, 4000 por omissão). Sem
+certificados, sem Cloudflare Tunnel, sem passos extra — é literalmente abrir
+uma porta e apontar o DynDNS para lá.
+
+Nota técnica: por omissão, o Android (a partir da versão 9) e o iOS bloqueiam
+tráfego HTTP simples nas apps. Já está tratado no `app/app.json`
+(`usesCleartextTraffic` no Android, `NSAllowsArbitraryLoads` no iOS) — não
+precisas de fazer mais nada para isto funcionar.
+
+Se um dia os requisitos mudarem e precisares de HTTPS (por exemplo, se
+passares a lidar com dados mais sensíveis), o caminho mais simples nessa
+altura seria um Cloudflare Tunnel (HTTPS automático, sem abrir portas) — mas
+não é preciso agora.
 
 ## Instalação como serviço do Windows
 
