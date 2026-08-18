@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Gestão de Suporte",
+    "slug": "suporte-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#f5f9ff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "pt.empresa.suporteapp"
+    },
+    "android": {
+      "package": "pt.empresa.suporteapp",
+      "permissions": ["CAMERA"]
+    },
+    "plugins": ["expo-secure-store"]
+  }
+}

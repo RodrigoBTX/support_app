@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Mockup - Backoffice API</title>
+<style>
+  :root{
+    --blue-900:#0b2f6b;--blue-700:#1d4ed8;--blue-600:#2563eb;--blue-500:#3b82f6;
+    --blue-100:#eaf1ff;--blue-50:#f5f9ff;
+    --green-500:#16a34a;--green-100:#dcfce7;
+    --amber-500:#d97706;--amber-100:#fef3c7;
+    --red-500:#dc2626;--red-100:#fee2e2;
+    --gray-200:#e2e8f0;--gray-300:#cbd5e1;--gray-400:#94a3b8;--gray-600:#64748b;--gray-900:#0f172a;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#eef2f7;color:var(--gray-900);}
+  .topbar{background:linear-gradient(135deg,var(--blue-700),var(--blue-900));color:#fff;padding:18px 32px;display:flex;justify-content:space-between;align-items:center;}
+  .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;}
+  .topbar .brand svg{width:20px;height:20px;}
+  .topbar .env{font-size:11.5px;background:rgba(255,255,255,.15);padding:5px 12px;border-radius:999px;font-weight:600;}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 32px 60px;}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+  .stat{background:#fff;border-radius:14px;padding:18px 20px;border:1px solid var(--gray-200);box-shadow:0 2px 8px rgba(15,23,42,.03);}
+  .stat-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .stat-icon{width:34px;height:34px;border-radius:10px;background:var(--blue-50);display:flex;align-items:center;justify-content:center;}
+  .stat-icon svg{width:17px;height:17px;color:var(--blue-600);}
+  .stat-icon.green{background:var(--green-100);}
+  .stat-icon.green svg{color:var(--green-500);}
+  .dot-status{width:9px;height:9px;border-radius:50%;background:var(--green-500);box-shadow:0 0 0 3px var(--green-100);}
+  .stat-num{font-size:24px;font-weight:800;margin-top:12px;}
+  .stat-lbl{font-size:12px;color:var(--gray-600);margin-top:2px;}
+
+  .panel{background:#fff;border-radius:16px;border:1px solid var(--gray-200);margin-bottom:22px;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.03);}
+  .panel-head{padding:16px 22px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center;}
+  .panel-title{font-size:14px;font-weight:700;}
+  .panel-sub{font-size:11.5px;color:var(--gray-600);margin-top:2px;}
+  .panel-body{padding:6px 0;}
+  .badge{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+  .badge-green{background:var(--green-100);color:var(--green-500);}
+  .badge-red{background:var(--red-100);color:var(--red-500);}
+  .badge-amber{background:var(--amber-100);color:var(--amber-500);}
+  .badge-gray{background:#f1f5f9;color:var(--gray-600);}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--gray-400);font-weight:700;padding:10px 22px;border-bottom:1px solid var(--gray-200);}
+  td{padding:12px 22px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .mono{font-family:'SF Mono',Consolas,monospace;font-size:11.5px;color:var(--gray-600);}
+  .dev-name{font-weight:700;}
+  .dev-sub{font-size:11px;color:var(--gray-400);margin-top:1px;}
+
+  .two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;align-items:start;}
+  .filters{display:flex;gap:8px;padding:0 22px 14px;}
+  .filter-select{font-size:11.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--gray-200);background:#f8fafc;color:var(--gray-600);font-weight:600;}
+  .log-level{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:6px;}
+  .log-ok{background:var(--green-500);}
+  .log-err{background:var(--red-500);}
+  tr.log-row{cursor:pointer;}
+  tr.log-row:hover{background:#f8fafc;}
+  .btn-ghost{font-size:11.5px;font-weight:700;color:var(--blue-600);background:var(--blue-50);border:none;padding:8px 14px;border-radius:9px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;}
+  .btn-ghost svg{width:13px;height:13px;}
+  .settings-row{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;border-bottom:1px solid #f1f5f9;}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-label{font-size:12.5px;font-weight:700;}
+  .settings-hint{font-size:11px;color:var(--gray-400);margin-top:2px;}
+  .seg{display:flex;background:#f1f5f9;border-radius:9px;padding:3px;}
+  .seg-opt{font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:7px;color:var(--gray-600);}
+  .seg-opt.active{background:#fff;color:var(--blue-600);box-shadow:0 1px 4px rgba(15,23,42,.1);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:20;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:#fff;border-radius:16px;width:440px;max-width:90vw;max-height:80vh;overflow-y:auto;box-shadow:0 24px 60px rgba(15,23,42,.3);}
+  .modal-head{padding:18px 22px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center;}
+  .modal-title{font-size:14px;font-weight:800;}
+  .modal-close{width:26px;height:26px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .modal-close svg{width:13px;height:13px;color:var(--gray-600);}
+  .modal-body{padding:18px 22px;}
+  .modal-field{margin-bottom:14px;}
+  .modal-field .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--gray-400);font-weight:700;margin-bottom:4px;}
+  .modal-field .v{font-size:12.5px;color:var(--gray-900);}
+  .json-box{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px;font-family:'SF Mono',Consolas,monospace;font-size:11.5px;line-height:1.7;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+    Backoffice — Módulo de Suporte
+  </div>
+  <div class="env">Cliente: Fábrica Norte, Lda · api v1.4.2</div>
+</div>
+
+<div class="wrap">
+
+  <div class="grid-4">
+    <div class="stat">
+      <div class="stat-top"><div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></div><div class="dot-status"></div></div>
+      <div class="stat-num">Online</div>
+      <div class="stat-lbl">Estado da API</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div><div class="dot-status"></div></div>
+      <div class="stat-num">Ligado</div>
+      <div class="stat-lbl">SQL Server (SRV-SQL01\SUPORTE)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></div></div>
+      <div class="stat-num">7</div>
+      <div class="stat-lbl">Dispositivos ligados (24h)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/></svg></div></div>
+      <div class="stat-num">14 / 14</div>
+      <div class="stat-lbl">Stored Procedures OK</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Verificação de Stored Procedures</div>
+          <div class="panel-sub">Comparação entre os SPs esperados pela API e os existentes na base de dados</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="badge badge-green">Tudo OK</span>
+          <button class="btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M4.6 15a8 8 0 0014.4 3.4M19.4 9A8 8 0 005 5.6"/></svg>Reinstalar / Verificar SPs</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <table>
+          <tr><th>Stored Procedure</th><th>Utilizado por</th><th>Estado</th></tr>
+          <tr><td class="mono">sp_ObterEquipamentos</td><td>Lista de equipamentos</td><td><span class="badge badge-green">Encontrado</span></td></tr>
+          <tr><td class="mono">sp_ObterPedidoDetalhe</td><td>Detalhe do pedido</td><td><span class="badge badge-green">Encontrado</span></td></tr>
+          <tr><td class="mono">sp_CriarPedido</td><td>Novo pedido</td><td><span class="badge badge-green">Encontrado</span></td></tr>
+          <tr><td class="mono">sp_ConcluirPedido</td><td>Concluir pedido</td><td><span class="badge badge-green">Encontrado</span></td></tr>
+          <tr><td class="mono">sp_RegistarDispositivo</td><td>Login / push token</td><td><span class="badge badge-green">Encontrado</span></td></tr>
+          <tr><td class="mono">sp_InserirLog</td><td>Middleware de logging</td><td><span class="badge badge-green">Encontrado</span></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Dispositivos ligados</div>
+          <div class="panel-sub">Últimos a comunicar com a API</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <table>
+          <tr><th>Técnico</th><th>Última atividade</th></tr>
+          <tr><td><div class="dev-name">João Silva</div><div class="dev-sub">Android · v1.4.2</div></td><td><span class="badge badge-green">agora</span></td></tr>
+          <tr><td><div class="dev-name">Ana Costa</div><div class="dev-sub">iOS · v1.4.2</div></td><td><span class="badge badge-green">há 3 min</span></td></tr>
+          <tr><td><div class="dev-name">Rui Pereira</div><div class="dev-sub">Android · v1.4.1</div></td><td><span class="badge badge-amber">há 2h</span></td></tr>
+          <tr><td><div class="dev-name">Marta Lopes</div><div class="dev-sub">Android · v1.4.2</div></td><td><span class="badge badge-gray">há 1 dia</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Logs de atividade</div>
+        <div class="panel-sub">Tudo o que a app lê/escreve na base de dados, com estado e duração</div>
+      </div>
+    </div>
+    <div class="filters">
+      <select class="filter-select"><option>Todos os utilizadores</option></select>
+      <select class="filter-select"><option>Todas as ações</option></select>
+      <select class="filter-select"><option>Últimas 24 horas</option></select>
+      <select class="filter-select"><option>Todos os estados</option></select>
+    </div>
+    <div class="panel-body">
+      <table>
+        <tr><th>Data / Hora</th><th>Utilizador</th><th>Ação</th><th>SP</th><th>Duração</th><th>Estado</th></tr>
+        <tr class="log-row" onclick="openLog(this)" data-params='{"PedidoId": 1042, "TecnicoId": 7, "FotosAnexadas": 2, "AssinaturaPresente": true}' data-action="Concluir pedido #A-1042" data-sp="sp_ConcluirPedido" data-user="João Silva" data-time="18/08/2026 14:32:11" data-status="ok" data-duration="142 ms">
+          <td class="mono">18/08 14:32:11</td><td>João Silva</td><td>Concluir pedido #A-1042</td><td class="mono">sp_ConcluirPedido</td><td>142 ms</td><td><span class="log-level log-ok"></span>OK</td>
+        </tr>
+        <tr class="log-row" onclick="openLog(this)" data-params='{"EquipamentoId": "EQ-00198", "TecnicoId": 12}' data-action="Consultar equipamento EQ-00198" data-sp="sp_ObterEquipamento" data-user="Ana Costa" data-time="18/08/2026 14:29:04" data-status="ok" data-duration="89 ms">
+          <td class="mono">18/08 14:29:04</td><td>Ana Costa</td><td>Consultar equipamento EQ-00198</td><td class="mono">sp_ObterEquipamento</td><td>89 ms</td><td><span class="log-level log-ok"></span>OK</td>
+        </tr>
+        <tr class="log-row" onclick="openLog(this)" data-params='{"EquipamentoId": "EQ-00231", "TecnicoId": 4, "Prioridade": "Urgente", "Descricao": "Ruido anomalo no arranque"}' data-action="Criar pedido" data-sp="sp_CriarPedido" data-user="Rui Pereira" data-time="18/08/2026 14:21:57" data-status="err" data-duration="2340 ms" data-error="Timeout: SQL Server não respondeu em 2000ms (SqlTimeoutError)">
+          <td class="mono">18/08 14:21:57</td><td>Rui Pereira</td><td>Criar pedido</td><td class="mono">sp_CriarPedido</td><td>2340 ms</td><td><span class="log-level log-err"></span><span class="badge badge-red">Timeout SQL</span></td>
+        </tr>
+        <tr class="log-row" onclick="openLog(this)" data-params='{"Utilizador": "marta.lopes", "DispositivoId": "AND-9F31C2"}' data-action="Login" data-sp="sp_ValidarUtilizador" data-user="Marta Lopes" data-time="18/08/2026 14:15:40" data-status="ok" data-duration="61 ms">
+          <td class="mono">18/08 14:15:40</td><td>Marta Lopes</td><td>Login</td><td class="mono">sp_ValidarUtilizador</td><td>61 ms</td><td><span class="log-level log-ok"></span>OK</td>
+        </tr>
+        <tr class="log-row" onclick="openLog(this)" data-params='{"PedidoId": 1042, "NomeFicheiro": "IMG_20260818_1401.jpg", "TamanhoKB": 812}' data-action="Upload de foto" data-sp="sp_RegistarFoto" data-user="João Silva" data-time="18/08/2026 14:02:18" data-status="ok" data-duration="310 ms">
+          <td class="mono">18/08 14:02:18</td><td>João Silva</td><td>Upload de foto</td><td class="mono">sp_RegistarFoto</td><td>310 ms</td><td><span class="log-level log-ok"></span>OK</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Definições</div>
+        <div class="panel-sub">Configuração da instalação neste servidor</div>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Retenção de logs</div>
+          <div class="settings-hint">Logs mais antigos que o período escolhido são limpos automaticamente todos os dias</div>
+        </div>
+        <div class="seg">
+          <div class="seg-opt">30 dias</div>
+          <div class="seg-opt">60 dias</div>
+          <div class="seg-opt active">90 dias</div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Pasta de fotos/assinaturas</div>
+          <div class="settings-hint">D:\SuporteApp\uploads\</div>
+        </div>
+        <button class="btn-ghost">Alterar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="logModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="mAction">—</div>
+      <div class="modal-close" onclick="closeLog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field"><div class="k">Utilizador</div><div class="v" id="mUser">—</div></div>
+      <div class="modal-field"><div class="k">Data / Hora</div><div class="v" id="mTime">—</div></div>
+      <div class="modal-field"><div class="k">Stored Procedure</div><div class="v mono" id="mSp">—</div></div>
+      <div class="modal-field"><div class="k">Duração</div><div class="v" id="mDuration">—</div></div>
+      <div class="modal-field" id="mErrorWrap" style="display:none">
+        <div class="k">Erro</div>
+        <div class="v" id="mError" style="color:var(--red-500);font-weight:600"></div>
+      </div>
+      <div class="modal-field">
+        <div class="k">Parâmetros enviados ao SP</div>
+        <div class="json-box" id="mParams">{}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openLog(row){
+  document.getElementById('mAction').textContent = row.dataset.action;
+  document.getElementById('mUser').textContent = row.dataset.user;
+  document.getElementById('mTime').textContent = row.dataset.time;
+  document.getElementById('mSp').textContent = row.dataset.sp;
+  document.getElementById('mDuration').textContent = row.dataset.duration;
+  document.getElementById('mParams').textContent = JSON.stringify(JSON.parse(row.dataset.params), null, 2);
+  var errWrap = document.getElementById('mErrorWrap');
+  if(row.dataset.status === 'err'){
+    errWrap.style.display = 'block';
+    document.getElementById('mError').textContent = row.dataset.error;
+  } else {
+    errWrap.style.display = 'none';
+  }
+  document.getElementById('logModal').classList.add('open');
+}
+function closeLog(){
+  document.getElementById('logModal').classList.remove('open');
+}
+document.getElementById('logModal').addEventListener('click', function(e){
+  if(e.target === this) closeLog();
+});
+</script>
+
+</body>
+</html>
