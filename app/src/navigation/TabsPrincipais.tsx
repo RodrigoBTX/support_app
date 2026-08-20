@@ -1,18 +1,26 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import DashboardScreen from '../screens/DashboardScreen';
 import EquipamentosScreen from '../screens/EquipamentosScreen';
 import EquipamentoDetalheScreen from '../screens/EquipamentoDetalheScreen';
 import LeitorQRScreen from '../screens/LeitorQRScreen';
 import AgendaScreen from '../screens/AgendaScreen';
-import NovoPedidoScreen from '../screens/NovoPedidoScreen';
 import PedidoDetalheScreen from '../screens/PedidoDetalheScreen';
 import PerfilScreen from '../screens/PerfilScreen';
+import MeusDadosScreen from '../screens/MeusDadosScreen';
 
 const Tab = createBottomTabNavigator();
 const StackEquipamentos = createNativeStackNavigator();
 const StackRaiz = createNativeStackNavigator();
+
+const ICONES: Record<string, keyof typeof Ionicons.glyphMap> = {
+  Início: 'home',
+  Equipamentos: 'construct',
+  Agenda: 'calendar',
+  Perfil: 'person',
+};
 
 function EquipamentosStack() {
   return (
@@ -25,7 +33,17 @@ function EquipamentosStack() {
 
 function Tabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: '#2563eb' }}>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: '#2563eb',
+        tabBarInactiveTintColor: '#94a3b8',
+        tabBarLabelStyle: { fontSize: 10.5, fontWeight: '600' },
+        tabBarIcon: ({ color, size, focused }) => (
+          <Ionicons name={focused ? ICONES[route.name] : (`${ICONES[route.name]}-outline` as any)} size={size} color={color} />
+        ),
+      })}
+    >
       <Tab.Screen name="Início" component={DashboardScreen} />
       <Tab.Screen name="Equipamentos" component={EquipamentosStack} />
       <Tab.Screen name="Agenda" component={AgendaScreen} />
@@ -40,8 +58,8 @@ export default function TabsPrincipais() {
     <StackRaiz.Navigator screenOptions={{ headerShown: false }}>
       <StackRaiz.Screen name="Tabs" component={Tabs} />
       <StackRaiz.Screen name="EquipamentoDetalhe" component={EquipamentoDetalheScreen} />
-      <StackRaiz.Screen name="NovoPedido" component={NovoPedidoScreen} />
       <StackRaiz.Screen name="PedidoDetalhe" component={PedidoDetalheScreen} />
+      <StackRaiz.Screen name="MeusDados" component={MeusDadosScreen} />
     </StackRaiz.Navigator>
   );
 }

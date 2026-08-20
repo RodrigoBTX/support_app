@@ -110,6 +110,23 @@ objetivo final: um único instalador que pede os dados de ligação ao SQL
 Server, cria a infraestrutura (tabelas/SPs de logs e dispositivos) e regista
 o serviço — tudo num único fluxo "seguinte, seguinte, concluir".
 
+## Definições editáveis no backoffice (planeado, não construído ainda)
+
+O painel "Definições" do backoffice (`http://.../backoffice`) mostra hoje só
+em modo leitura o que está definido no `.env` (retenção de logs, pasta de
+uploads). Para a versão final, fica planeado tornar isto editável ali
+mesmo, sem precisar de editar ficheiros à mão:
+
+- **Retenção de logs** — fácil de tornar editável em tempo real (sem
+  reiniciar a API): grava a escolha (30/60/90 dias) num pequeno ficheiro de
+  configuração, e a tarefa de limpeza automática passa a ler sempre o valor
+  mais recente antes de correr.
+- **Pasta de fotos/assinaturas** — mais delicado, porque várias partes do
+  código já assumem esse caminho fixo desde o arranque do processo; mudar
+  isto em runtime exigiria tornar esse valor dinâmico em vez de uma
+  constante carregada uma vez no arranque, ou simplesmente pedir para
+  reiniciar a API depois de gravar a alteração.
+
 ## Notificações push (preparado, não ativado)
 
 A app regista o `pushToken` do dispositivo no login (via `sp_RegistarDispositivo`).

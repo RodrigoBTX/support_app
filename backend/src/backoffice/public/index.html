@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Backoffice — Módulo de Suporte</title>
+<style>
+  :root{
+    --blue-900:#0b2f6b;--blue-700:#1d4ed8;--blue-600:#2563eb;--blue-500:#3b82f6;
+    --blue-100:#eaf1ff;--blue-50:#f5f9ff;
+    --green-500:#16a34a;--green-100:#dcfce7;
+    --amber-500:#d97706;--amber-100:#fef3c7;
+    --red-500:#dc2626;--red-100:#fee2e2;
+    --gray-200:#e2e8f0;--gray-300:#cbd5e1;--gray-400:#94a3b8;--gray-600:#64748b;--gray-900:#0f172a;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#eef2f7;color:var(--gray-900);}
+  .topbar{background:linear-gradient(135deg,var(--blue-700),var(--blue-900));color:#fff;padding:18px 32px;display:flex;justify-content:space-between;align-items:center;}
+  .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;}
+  .topbar .env{font-size:11.5px;background:rgba(255,255,255,.15);padding:5px 12px;border-radius:999px;font-weight:600;}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 32px 60px;}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+  .stat{background:#fff;border-radius:14px;padding:18px 20px;border:1px solid var(--gray-200);box-shadow:0 2px 8px rgba(15,23,42,.03);}
+  .stat-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .dot-status{width:9px;height:9px;border-radius:50%;background:var(--gray-300);}
+  .dot-status.ok{background:var(--green-500);box-shadow:0 0 0 3px var(--green-100);}
+  .dot-status.falhou{background:var(--red-500);box-shadow:0 0 0 3px var(--red-100);}
+  .stat-num{font-size:22px;font-weight:800;margin-top:12px;}
+  .stat-lbl{font-size:12px;color:var(--gray-600);margin-top:2px;}
+  .panel{background:#fff;border-radius:16px;border:1px solid var(--gray-200);margin-bottom:22px;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.03);}
+  .panel-head{padding:16px 22px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center;}
+  .panel-title{font-size:14px;font-weight:700;}
+  .panel-sub{font-size:11.5px;color:var(--gray-600);margin-top:2px;}
+  .badge{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+  .badge-green{background:var(--green-100);color:var(--green-500);}
+  .badge-red{background:var(--red-100);color:var(--red-500);}
+  .badge-amber{background:var(--amber-100);color:var(--amber-500);}
+  .badge-gray{background:#f1f5f9;color:var(--gray-600);}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--gray-400);font-weight:700;padding:10px 22px;border-bottom:1px solid var(--gray-200);}
+  td{padding:12px 22px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .mono{font-family:'SF Mono',Consolas,monospace;font-size:11.5px;color:var(--gray-600);}
+  .two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;align-items:start;}
+  .vazio{padding:22px;text-align:center;color:var(--gray-400);font-size:12.5px;}
+  .btn-ghost{font-size:11.5px;font-weight:700;color:var(--blue-600);background:var(--blue-50);border:none;padding:8px 14px;border-radius:9px;cursor:pointer;}
+  .btn-ghost:disabled{opacity:.5;cursor:default;}
+  tr.log-row{cursor:pointer;}
+  tr.log-row:hover{background:#f8fafc;}
+  .settings-row{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;border-bottom:1px solid #f1f5f9;}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-label{font-size:12.5px;font-weight:700;}
+  .settings-hint{font-size:11px;color:var(--gray-400);margin-top:2px;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:20;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:#fff;border-radius:16px;width:440px;max-width:90vw;max-height:80vh;overflow-y:auto;box-shadow:0 24px 60px rgba(15,23,42,.3);}
+  .modal-head{padding:18px 22px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center;}
+  .modal-title{font-size:14px;font-weight:800;}
+  .modal-close{width:26px;height:26px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;}
+  .modal-body{padding:18px 22px;}
+  .modal-field{margin-bottom:14px;}
+  .modal-field .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--gray-400);font-weight:700;margin-bottom:4px;}
+  .modal-field .v{font-size:12.5px;color:var(--gray-900);}
+  .json-box{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px;font-family:'SF Mono',Consolas,monospace;font-size:11.5px;line-height:1.7;white-space:pre-wrap;}
+  .erro-box{background:var(--red-100);color:var(--red-500);padding:12px 22px;font-size:12px;}
+  .logs-search-row{padding:12px 22px;border-bottom:1px solid var(--gray-200);}
+  .logs-search{width:100%;padding:9px 14px;border-radius:9px;border:1.5px solid var(--gray-200);background:#f8fafc;font-size:12.5px;}
+  .logs-search:focus{outline:none;border-color:var(--blue-500);background:#fff;}
+  .logs-scroll{max-height:340px;overflow-y:auto;overflow-x:hidden;}
+  .logs-scroll table{width:100%;}
+  .logs-scroll thead th{position:sticky;top:0;background:#fff;z-index:1;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Backoffice — Módulo de Suporte</div>
+  <div class="env" id="envLabel">a carregar...</div>
+</div>
+
+<div class="wrap">
+
+  <div class="grid-4">
+    <div class="stat">
+      <div class="stat-top"><div class="dot-status" id="dotApi"></div></div>
+      <div class="stat-num" id="statApi">—</div>
+      <div class="stat-lbl">Estado da API</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"><div class="dot-status" id="dotSql"></div></div>
+      <div class="stat-num" id="statSql">—</div>
+      <div class="stat-lbl">SQL Server</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"></div>
+      <div class="stat-num" id="statDispositivos">—</div>
+      <div class="stat-lbl">Dispositivos ligados</div>
+    </div>
+    <div class="stat">
+      <div class="stat-top"></div>
+      <div class="stat-num" id="statSps">—</div>
+      <div class="stat-lbl">Stored Procedures OK</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Verificação de Stored Procedures</div>
+          <div class="panel-sub">Comparação entre os SPs esperados pela API e os existentes na base de dados. "Instalar" só cria/atualiza os SPs de infraestrutura (logs, dispositivos) — os SPs de negócio (equipamentos, pedidos, intervenções) dependem do teu schema e têm de ser corridos manualmente.</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-ghost" id="btnVerificar">Verificar Agora</button>
+          <button class="btn-ghost" id="btnReinstalar">Instalar SPs em Falta</button>
+        </div>
+      </div>
+      <div id="tabelaSps"><div class="vazio">A carregar...</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Dispositivos ligados</div>
+          <div class="panel-sub">Últimos a comunicar com a API</div>
+        </div>
+      </div>
+      <div id="tabelaDispositivos"><div class="vazio">A carregar...</div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Logs de atividade <span class="badge badge-amber" id="pillPausado" style="display:none;margin-left:6px">⏸ Pausado</span></div>
+        <div class="panel-sub">Clica numa linha para ver os parâmetros enviados ao SP</div>
+      </div>
+      <button class="btn-ghost" id="btnPausarLogs" onclick="alternarPausaLogs()">⏸ Pausar</button>
+    </div>
+    <div class="logs-search-row">
+      <input class="logs-search" id="logSearch" type="text" placeholder="Pesquisar por ação, utilizador, SP ou estado..." oninput="renderizarLogs()" />
+    </div>
+    <div class="logs-scroll" id="tabelaLogs"><div class="vazio">A carregar...</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Definições</div>
+        <div class="panel-sub">Configuração desta instalação (definida no ficheiro .env do servidor)</div>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Retenção de logs</div>
+        <div class="settings-hint" id="defRetencao">—</div>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Pasta de fotos/assinaturas</div>
+        <div class="settings-hint" id="defUploads">—</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="logModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="mAction">—</div>
+      <button class="modal-close" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field"><div class="k">Utilizador</div><div class="v" id="mUser">—</div></div>
+      <div class="modal-field"><div class="k">Data / Hora</div><div class="v" id="mTime">—</div></div>
+      <div class="modal-field"><div class="k">Stored Procedure</div><div class="v mono" id="mSp">—</div></div>
+      <div class="modal-field"><div class="k">Duração</div><div class="v" id="mDuration">—</div></div>
+      <div class="modal-field" id="mErrorWrap" style="display:none">
+        <div class="k">Erro</div>
+        <div class="v" id="mError" style="color:var(--red-500);font-weight:600"></div>
+      </div>
+      <div class="modal-field">
+        <div class="k">Parâmetros enviados ao SP</div>
+        <div class="json-box" id="mParams">{}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function pedirJson(caminho, opcoes) {
+  const resposta = await fetch(caminho, opcoes);
+  if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+  return resposta.json();
+}
+
+function badge(texto, cor) {
+  return `<span class="badge badge-${cor}">${texto}</span>`;
+}
+
+async function carregarStatus() {
+  try {
+    const s = await pedirJson('/backoffice/status');
+    document.getElementById('statApi').textContent = s.api === 'ok' ? 'Online' : 'Falhou';
+    document.getElementById('dotApi').className = 'dot-status ' + (s.api === 'ok' ? 'ok' : 'falhou');
+    document.getElementById('statSql').textContent = s.sqlServer === 'ok' ? 'Ligado' : 'Falhou';
+    document.getElementById('dotSql').className = 'dot-status ' + (s.sqlServer === 'ok' ? 'ok' : 'falhou');
+    document.getElementById('envLabel').textContent = s.sqlServer === 'ok' ? 'Ligação ativa' : 'Sem ligação à BD';
+  } catch (err) {
+    document.getElementById('envLabel').textContent = 'Erro ao contactar a API';
+  }
+}
+
+async function carregarSps() {
+  const alvo = document.getElementById('tabelaSps');
+  try {
+    const lista = await pedirJson('/backoffice/sps');
+    const encontrados = lista.filter((s) => s.encontrado).length;
+    document.getElementById('statSps').textContent = `${encontrados} / ${lista.length}`;
+    alvo.innerHTML = `<table>
+      <tr><th>Stored Procedure</th><th>Usado por</th><th>Estado</th></tr>
+      ${lista.map((s) => `<tr>
+        <td class="mono">${s.nome}</td>
+        <td>${s.usadoPor}</td>
+        <td>${s.encontrado ? badge('Encontrado', 'green') : badge('Não encontrado', 'red')}</td>
+      </tr>`).join('')}
+    </table>`;
+  } catch (err) {
+    alvo.innerHTML = `<div class="erro-box">Erro ao verificar SPs: ${err.message}</div>`;
+  }
+}
+
+async function carregarDispositivos() {
+  const alvo = document.getElementById('tabelaDispositivos');
+  try {
+    const lista = await pedirJson('/backoffice/dispositivos');
+    document.getElementById('statDispositivos').textContent = lista.length;
+    if (!lista.length) {
+      alvo.innerHTML = '<div class="vazio">Ainda nenhum dispositivo fez login.</div>';
+      return;
+    }
+    alvo.innerHTML = `<table>
+      <tr><th>Técnico</th><th>Última atividade</th></tr>
+      ${lista.map((d) => `<tr>
+        <td><b>${d.NomeDispositivo || d.DispositivoId}</b><br><span style="color:#94a3b8;font-size:11px">${d.Plataforma || ''} · ${d.VersaoApp || ''}</span></td>
+        <td>${d.UltimaAtividade || ''}</td>
+      </tr>`).join('')}
+    </table>`;
+  } catch (err) {
+    alvo.innerHTML = `<div class="erro-box">Erro ao consultar dispositivos: ${err.message}</div>`;
+  }
+}
+
+let ultimosLogs = [];
+let logsFiltrados = [];
+let logsPausados = false;
+
+function alternarPausaLogs() {
+  logsPausados = !logsPausados;
+  const btn = document.getElementById('btnPausarLogs');
+  const pill = document.getElementById('pillPausado');
+  if (logsPausados) {
+    btn.textContent = '▶ Retomar';
+    pill.style.display = 'inline-flex';
+  } else {
+    btn.textContent = '⏸ Pausar';
+    pill.style.display = 'none';
+    carregarLogs(); // ao retomar, apanha logo tudo o que se passou entretanto
+  }
+}
+
+async function carregarLogs() {
+  // Em pausa: não vai buscar nada de novo, mantém o que já está no ecrã
+  // (incluindo o que estiveres a pesquisar) até retomares.
+  if (logsPausados) return;
+  try {
+    ultimosLogs = await pedirJson('/backoffice/logs');
+  } catch (err) {
+    document.getElementById('tabelaLogs').innerHTML = `<div class="erro-box">Erro ao consultar logs: ${err.message}</div>`;
+    return;
+  }
+  renderizarLogs();
+}
+
+function renderizarLogs() {
+  const alvo = document.getElementById('tabelaLogs');
+  const termo = (document.getElementById('logSearch').value || '').trim().toLowerCase();
+
+  logsFiltrados = !termo ? ultimosLogs : ultimosLogs.filter((l) => {
+    const alvoTexto = [l.Accao, l.Utilizador, l.SpNome, l.DataHora, l.Sucesso ? 'ok' : 'erro', l.Erro]
+      .filter(Boolean).join(' ').toLowerCase();
+    return alvoTexto.includes(termo);
+  });
+
+  if (!ultimosLogs.length) {
+    alvo.innerHTML = '<div class="vazio">Ainda sem logs registados.</div>';
+    return;
+  }
+  if (!logsFiltrados.length) {
+    alvo.innerHTML = '<div class="vazio">Nenhum log corresponde à pesquisa.</div>';
+    return;
+  }
+
+  alvo.innerHTML = `<table>
+    <thead><tr><th>Data / Hora</th><th>Utilizador</th><th>Ação</th><th>SP</th><th>Duração</th><th>Estado</th></tr></thead>
+    <tbody>
+      ${logsFiltrados.map((l, i) => `<tr class="log-row" onclick="abrirLog(${i})">
+        <td class="mono">${l.DataHora || ''}</td>
+        <td>${l.Utilizador || '—'}</td>
+        <td>${l.Accao}</td>
+        <td class="mono">${l.SpNome || '—'}</td>
+        <td>${l.DuracaoMs != null ? l.DuracaoMs + ' ms' : '—'}</td>
+        <td>${l.Sucesso ? badge('OK', 'green') : badge(l.Erro || 'Erro', 'red')}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function abrirLog(indice) {
+  const l = logsFiltrados[indice];
+  document.getElementById('mAction').textContent = l.Accao;
+  document.getElementById('mUser').textContent = l.Utilizador || '—';
+  document.getElementById('mTime').textContent = l.DataHora || '—';
+  document.getElementById('mSp').textContent = l.SpNome || '—';
+  document.getElementById('mDuration').textContent = l.DuracaoMs != null ? l.DuracaoMs + ' ms' : '—';
+  let params = '{}';
+  try { params = JSON.stringify(JSON.parse(l.Parametros || '{}'), null, 2); } catch (_) { params = l.Parametros || '{}'; }
+  document.getElementById('mParams').textContent = params;
+  const errWrap = document.getElementById('mErrorWrap');
+  if (!l.Sucesso) {
+    errWrap.style.display = 'block';
+    document.getElementById('mError').textContent = l.Erro || 'Erro desconhecido';
+  } else {
+    errWrap.style.display = 'none';
+  }
+  document.getElementById('logModal').classList.add('open');
+}
+function fecharModal() { document.getElementById('logModal').classList.remove('open'); }
+document.getElementById('logModal').addEventListener('click', (e) => { if (e.target.id === 'logModal') fecharModal(); });
+
+async function carregarDefinicoes() {
+  try {
+    const d = await pedirJson('/backoffice/definicoes');
+    document.getElementById('defRetencao').textContent = `${d.logRetentionDays} dias (LOG_RETENTION_DAYS no .env)`;
+    document.getElementById('defUploads').textContent = d.uploadsPath;
+  } catch (err) {
+    document.getElementById('defRetencao').textContent = 'Erro ao carregar';
+  }
+}
+
+document.getElementById('btnVerificar').addEventListener('click', async () => {
+  const btn = document.getElementById('btnVerificar');
+  btn.disabled = true;
+  btn.textContent = 'A verificar...';
+  try {
+    await carregarSps();
+  } catch (err) {
+    alert('Falha ao verificar: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Verificar Agora';
+  }
+});
+
+document.getElementById('btnReinstalar').addEventListener('click', async () => {
+  const btn = document.getElementById('btnReinstalar');
+  btn.disabled = true;
+  btn.textContent = 'A instalar...';
+  try {
+    await pedirJson('/backoffice/sps/reinstalar', { method: 'POST' });
+    await carregarSps();
+  } catch (err) {
+    alert('Falha ao instalar: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Instalar SPs em Falta';
+  }
+});
+
+async function carregarTudo() {
+  await Promise.all([carregarStatus(), carregarSps(), carregarDispositivos(), carregarLogs(), carregarDefinicoes()]);
+}
+carregarTudo();
+setInterval(carregarTudo, 15000); // atualiza sozinho a cada 15s
+</script>
+
+</body>
+</html>

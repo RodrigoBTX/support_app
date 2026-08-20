@@ -7,21 +7,10 @@
 const fs = require('fs');
 const path = require('path');
 const sql = require('mssql');
-const { sql: sqlConfig } = require('../src/config/env');
+const { construirConfigLigacao } = require('../src/db/connectionConfig');
 
 async function instalarInfraestrutura() {
-  const pool = await new sql.ConnectionPool({
-    server: sqlConfig.server,
-    port: sqlConfig.port,
-    database: sqlConfig.database,
-    user: sqlConfig.user,
-    password: sqlConfig.password,
-    options: {
-      encrypt: sqlConfig.encrypt,
-      trustServerCertificate: sqlConfig.trustServerCertificate,
-      ...(sqlConfig.instanceName ? { instanceName: sqlConfig.instanceName } : {}),
-    },
-  }).connect();
+  const pool = await new sql.ConnectionPool(construirConfigLigacao()).connect();
 
   const pastaInfra = path.join(__dirname, '..', 'sql', 'infra');
   const ficheiros = fs.readdirSync(pastaInfra).filter((f) => f.endsWith('.sql')).sort();

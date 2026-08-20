@@ -12,14 +12,37 @@ router.use(autenticar);
 const upload = multer({ dest: path.join(uploadsPath, 'tmp') });
 
 /**
- * GET /pedidos/agendados — próximos pedidos agendados do técnico autenticado.
+ * Pasta de uma intervenção: uploads/{mhstamp}/
+ * Nome do ficheiro: {AAAAMMDD-de-hoje}_{numerador}.ext — o numerador conta
+ * quantos ficheiros já existem nessa pasta para o dia de hoje e soma 1, para
+ * suportar mais do que uma foto/assinatura no mesmo dia sem se sobreporem.
+ */
+function pastaIntervencao(mhstamp) {
+  const pasta = path.join(uploadsPath, String(mhstamp));
+  fs.mkdirSync(pasta, { recursive: true });
+  return pasta;
+}
+
+function proximoNomeFicheiro(mhstamp, extensao) {
+  const pasta = pastaIntervencao(mhstamp);
+  const agora = new Date();
+  const dataStr = `${agora.getFullYear()}${String(agora.getMonth() + 1).padStart(2, '0')}${String(agora.getDate()).padStart(2, '0')}`;
+  const existentes = fs.readdirSync(pasta).filter((f) => f.startsWith(`${dataStr}_`));
+  const numerador = existentes.length + 1;
+  const nomeFicheiro = `${dataStr}_${numerador}${extensao}`;
+  return { pasta, nomeFicheiro, caminhoCompleto: path.join(pasta, nomeFicheiro) };
+}
+
+/**
+ * GET /pedidos/agendados — próximas intervenções (mh, realizada=0) do técnico autenticado.
  */
 router.get('/agendados', async (req, res) => {
   req.logInfo = { accao: 'Consultar pedidos agendados', spNome: 'sp_ObterPedidosTecnico' };
   try {
     const resultado = await executeProcedure('sp_ObterPedidosTecnico', {
       TecnicoId: { type: sql.Int, value: req.user.tecnicoId },
-      Estado: { type: sql.NVarChar(30), value: 'Agendado' },
+      Realizada: { type: sql.Bit, value: 0 },
+      Top: { type: sql.Int, value: null },
     });
     res.json(resultado.recordset);
   } catch (err) {
@@ -29,15 +52,39 @@ router.get('/agendados', async (req, res) => {
 });
 
 /**
- * GET /pedidos/agenda?data=YYYY-MM-DD — agenda do técnico para um dia.
+ * GET /pedidos/realizadas?top=5 — últimas intervenções já concluídas do
+ * técnico autenticado, mais recente primeiro.
+ */
+router.get('/realizadas', async (req, res) => {
+  const top = req.query.top ? Number(req.query.top) : 5;
+  req.logInfo = { accao: 'Consultar pedidos realizados', spNome: 'sp_ObterPedidosTecnico', parametros: { top } };
+  try {
+    const resultado = await executeProcedure('sp_ObterPedidosTecnico', {
+      TecnicoId: { type: sql.Int, value: req.user.tecnicoId },
+      Realizada: { type: sql.Bit, value: 1 },
+      Top: { type: sql.Int, value: top },
+    });
+    res.json(resultado.recordset);
+  } catch (err) {
+    req.logInfo.erro = err.message;
+    res.status(500).json({ erro: 'Erro ao consultar pedidos realizados.', detalhe: err.message });
+  }
+});
+
+/**
+ * GET /pedidos/agenda?inicio=YYYY-MM-DD&fim=YYYY-MM-DD — agenda do técnico
+ * num intervalo de dias (mx + mh). "fim" é opcional — sem ele devolve só o
+ * dia de "inicio" (mantém compatibilidade com pedir um único dia).
  */
 router.get('/agenda', async (req, res) => {
-  const data = req.query.data || new Date().toISOString().slice(0, 10);
-  req.logInfo = { accao: `Consultar agenda ${data}`, spNome: 'sp_ObterAgendaTecnico', parametros: { data } };
+  const inicio = req.query.inicio || new Date().toISOString().slice(0, 10);
+  const fim = req.query.fim || null;
+  req.logInfo = { accao: `Consultar agenda ${inicio}${fim ? ` a ${fim}` : ''}`, spNome: 'sp_ObterAgendaTecnico', parametros: { inicio, fim } };
   try {
     const resultado = await executeProcedure('sp_ObterAgendaTecnico', {
       TecnicoId: { type: sql.Int, value: req.user.tecnicoId },
-      Data: { type: sql.Date, value: data },
+      DataInicio: { type: sql.Date, value: inicio },
+      DataFim: { type: sql.Date, value: fim },
     });
     res.json(resultado.recordset);
   } catch (err) {
@@ -47,7 +94,7 @@ router.get('/agenda', async (req, res) => {
 });
 
 /**
- * GET /pedidos/:id — detalhe de um pedido.
+ * GET /pedidos/:id — detalhe de um pedido (pa) + as suas intervenções (mh).
  */
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
@@ -56,8 +103,11 @@ router.get('/:id', async (req, res) => {
     const resultado = await executeProcedure('sp_ObterPedidoDetalhe', {
       PedidoId: { type: sql.Int, value: id },
     });
-    if (!resultado.recordset?.length) return res.status(404).json({ erro: 'Pedido não encontrado.' });
-    res.json(resultado.recordset[0]);
+    // sp_ObterPedidoDetalhe devolve 2 resultsets: [0] = o pedido, [1] = as intervenções (mh) desse pedido.
+    const pedido = resultado.recordsets?.[0]?.[0];
+    if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado.' });
+    const intervencoes = resultado.recordsets?.[1] || [];
+    res.json({ ...pedido, intervencoes });
   } catch (err) {
     req.logInfo.erro = err.message;
     res.status(500).json({ erro: 'Erro ao consultar pedido.', detalhe: err.message });
@@ -65,90 +115,82 @@ router.get('/:id', async (req, res) => {
 });
 
 /**
- * POST /pedidos — cria um novo pedido de assistência.
- * Body: { equipamentoCodigo, tipo, prioridade, descricao }
+ * POST /pedidos/:id/iniciar — marca o início de uma intervenção (mh).
+ * Body: { mhstamp }
+ * ":id" (nopat) fica só para contexto/log — quem identifica a intervenção é o mhstamp.
  */
-router.post('/', async (req, res) => {
-  const { equipamentoCodigo, tipo, prioridade, descricao } = req.body;
-  req.logInfo = { accao: 'Criar pedido', spNome: 'sp_CriarPedido', parametros: { equipamentoCodigo, tipo, prioridade } };
+router.post('/:id/iniciar', async (req, res) => {
+  const { id } = req.params;
+  const { mhstamp } = req.body;
+  if (!mhstamp) return res.status(400).json({ erro: 'mhstamp é obrigatório.' });
+
+  req.logInfo = { accao: `Iniciar intervenção — pedido #${id}`, spNome: 'sp_IniciarIntervencao', parametros: { pedidoId: id, mhstamp } };
+
   try {
-    const resultado = await executeProcedure('sp_CriarPedido', {
-      EquipamentoCodigo: { type: sql.NVarChar(50), value: equipamentoCodigo },
-      TecnicoId: { type: sql.Int, value: req.user.tecnicoId },
-      Tipo: { type: sql.NVarChar(50), value: tipo },
-      Prioridade: { type: sql.NVarChar(20), value: prioridade },
-      Descricao: { type: sql.NVarChar(sql.MAX), value: descricao },
+    const resultado = await executeProcedure('sp_IniciarIntervencao', {
+      MhStamp: { type: sql.VarChar(25), value: mhstamp },
     });
-    res.status(201).json(resultado.recordset?.[0] || { criado: true });
+    res.json(resultado.recordset?.[0] || { iniciado: true });
   } catch (err) {
     req.logInfo.erro = err.message;
-    res.status(500).json({ erro: 'Erro ao criar pedido.', detalhe: err.message });
+    res.status(500).json({ erro: 'Erro ao iniciar intervenção.', detalhe: err.message });
   }
 });
 
 /**
  * POST /pedidos/:id/fotos — upload de uma foto associada à intervenção.
- * Guarda o ficheiro em uploads/{ano}/{mes}/{pedidoId}/ e regista o caminho via sp_RegistarFoto.
+ * Body (multipart): foto (ficheiro), mhstamp
+ * Guarda em uploads/{mhstamp}/{AAAAMMDD}_{numerador}.ext
  */
 router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
   const { id } = req.params;
+  const { mhstamp } = req.body;
   if (!req.file) return res.status(400).json({ erro: 'Ficheiro "foto" em falta.' });
+  if (!mhstamp) return res.status(400).json({ erro: 'mhstamp é obrigatório.' });
 
-  const agora = new Date();
-  const pastaDestino = path.join(uploadsPath, String(agora.getFullYear()), String(agora.getMonth() + 1).padStart(2, '0'), String(id));
-  fs.mkdirSync(pastaDestino, { recursive: true });
-
-  const nomeFinal = `${agora.getTime()}_${req.file.originalname}`;
-  const caminhoFinal = path.join(pastaDestino, nomeFinal);
-  fs.renameSync(req.file.path, caminhoFinal);
+  const extensao = path.extname(req.file.originalname) || '.jpg';
+  const { caminhoCompleto, nomeFicheiro } = proximoNomeFicheiro(mhstamp, extensao);
+  fs.renameSync(req.file.path, caminhoCompleto);
 
   req.logInfo = {
     accao: `Upload de foto — pedido #${id}`,
-    spNome: 'sp_RegistarFoto',
-    parametros: { pedidoId: id, ficheiro: nomeFinal, tamanhoKB: Math.round(req.file.size / 1024) },
+    spNome: null,
+    parametros: { pedidoId: id, mhstamp, ficheiro: nomeFicheiro, tamanhoKB: Math.round(req.file.size / 1024) },
   };
 
-  try {
-    await executeProcedure('sp_RegistarFoto', {
-      PedidoId: { type: sql.Int, value: id },
-      CaminhoFicheiro: { type: sql.NVarChar(400), value: caminhoFinal },
-      DataHora: { type: sql.DateTime, value: agora },
-    });
-    res.status(201).json({ guardado: true, caminho: caminhoFinal });
-  } catch (err) {
-    req.logInfo.erro = err.message;
-    res.status(500).json({ erro: 'Erro ao registar foto.', detalhe: err.message });
-  }
+  res.status(201).json({ guardado: true, caminho: caminhoCompleto });
 });
 
 /**
- * POST /pedidos/:id/concluir — fecha o pedido, associando assinatura do cliente.
- * Body: { assinaturaBase64 }
+ * POST /pedidos/:id/concluir — fecha a intervenção (mh), associando o relatório
+ * e a assinatura do cliente.
+ * Body: { mhstamp, relatorio, assinaturaBase64 }
  */
 router.post('/:id/concluir', async (req, res) => {
   const { id } = req.params;
-  const { assinaturaBase64 } = req.body;
+  const { mhstamp, relatorio, assinaturaBase64 } = req.body;
+  if (!mhstamp) return res.status(400).json({ erro: 'mhstamp é obrigatório.' });
   if (!assinaturaBase64) return res.status(400).json({ erro: 'assinaturaBase64 é obrigatória.' });
 
-  const agora = new Date();
-  const pastaDestino = path.join(uploadsPath, String(agora.getFullYear()), String(agora.getMonth() + 1).padStart(2, '0'), String(id));
-  fs.mkdirSync(pastaDestino, { recursive: true });
-  const caminhoAssinatura = path.join(pastaDestino, `assinatura_${agora.getTime()}.png`);
+  const { caminhoCompleto: caminhoAssinatura } = proximoNomeFicheiro(mhstamp, '.png');
   fs.writeFileSync(caminhoAssinatura, Buffer.from(assinaturaBase64, 'base64'));
 
-  req.logInfo = { accao: `Concluir pedido #${id}`, spNome: 'sp_ConcluirPedido', parametros: { pedidoId: id } };
+  req.logInfo = {
+    accao: `Concluir intervenção — pedido #${id}`,
+    spNome: 'sp_ConcluirIntervencao',
+    parametros: { pedidoId: id, mhstamp },
+  };
 
   try {
-    const resultado = await executeProcedure('sp_ConcluirPedido', {
+    const resultado = await executeProcedure('sp_ConcluirIntervencao', {
+      MhStamp: { type: sql.VarChar(25), value: mhstamp },
       PedidoId: { type: sql.Int, value: id },
-      TecnicoId: { type: sql.Int, value: req.user.tecnicoId },
-      CaminhoAssinatura: { type: sql.NVarChar(400), value: caminhoAssinatura },
-      DataHora: { type: sql.DateTime, value: agora },
+      Relatorio: { type: sql.NVarChar(sql.MAX), value: relatorio || null },
     });
-    res.json(resultado.recordset?.[0] || { concluido: true });
+    res.json({ ...(resultado.recordset?.[0] || { concluido: true }), assinatura: caminhoAssinatura });
   } catch (err) {
     req.logInfo.erro = err.message;
-    res.status(500).json({ erro: 'Erro ao concluir pedido.', detalhe: err.message });
+    res.status(500).json({ erro: 'Erro ao concluir intervenção.', detalhe: err.message });
   }
 });
 

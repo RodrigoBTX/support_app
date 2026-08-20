@@ -1,5 +1,5 @@
 const sql = require('mssql');
-const { sql: sqlConfig } = require('../config/env');
+const { construirConfigLigacao } = require('./connectionConfig');
 
 /**
  * Pool de ligação único e partilhado por toda a API.
@@ -10,16 +10,7 @@ let poolPromise = null;
 function getPool() {
   if (!poolPromise) {
     const config = {
-      server: sqlConfig.server,
-      port: sqlConfig.port,
-      database: sqlConfig.database,
-      user: sqlConfig.user,
-      password: sqlConfig.password,
-      options: {
-        encrypt: sqlConfig.encrypt,
-        trustServerCertificate: sqlConfig.trustServerCertificate,
-        ...(sqlConfig.instanceName ? { instanceName: sqlConfig.instanceName } : {}),
-      },
+      ...construirConfigLigacao(),
       pool: {
         max: 10,
         min: 0,

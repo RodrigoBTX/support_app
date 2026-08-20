@@ -50,7 +50,16 @@ router.post('/login', async (req, res) => {
       opcoesToken
     );
 
-    res.json({ token, utilizador: { nome: utilizador.Nome, tecnicoId: utilizador.TecnicoId } });
+    res.json({
+      token,
+      utilizador: {
+        username: utilizador.Username,
+        nome: utilizador.Nome,
+        abreviatura: utilizador.Abreviatura,
+        tecnicoId: utilizador.TecnicoId,
+        email: utilizador.Email,
+      },
+    });
   } catch (err) {
     req.logInfo.erro = err.message;
     res.status(500).json({ erro: 'Erro ao validar login.', detalhe: err.message });

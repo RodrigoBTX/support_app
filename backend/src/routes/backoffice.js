@@ -9,15 +9,13 @@ const router = express.Router();
  * "Verificação de Stored Procedures" do backoffice (docs/ARQUITETURA.md tem o contrato de cada uma).
  */
 const SPS_ESPERADOS = [
-  { nome: 'sp_ObterEquipamentos', usadoPor: 'Lista de equipamentos' },
-  { nome: 'sp_ObterEquipamento', usadoPor: 'Detalhe do equipamento' },
+  { nome: 'sp_ObterEquipamentos', usadoPor: 'Lista, pesquisa e detalhe de equipamentos' },
   { nome: 'sp_ObterHistoricoEquipamento', usadoPor: 'Histórico do equipamento' },
   { nome: 'sp_ObterPedidosTecnico', usadoPor: 'Dashboard / próximos agendados' },
   { nome: 'sp_ObterAgendaTecnico', usadoPor: 'Agenda' },
   { nome: 'sp_ObterPedidoDetalhe', usadoPor: 'Detalhe do pedido' },
-  { nome: 'sp_CriarPedido', usadoPor: 'Novo pedido' },
-  { nome: 'sp_RegistarFoto', usadoPor: 'Upload de foto' },
-  { nome: 'sp_ConcluirPedido', usadoPor: 'Concluir pedido' },
+  { nome: 'sp_IniciarIntervencao', usadoPor: 'Iniciar intervenção' },
+  { nome: 'sp_ConcluirIntervencao', usadoPor: 'Concluir intervenção' },
   { nome: 'sp_ValidarUtilizador', usadoPor: 'Login' },
   { nome: 'sp_RegistarDispositivo', usadoPor: 'Login / registo de dispositivo' },
   { nome: 'sp_InserirLog', usadoPor: 'Middleware de logging' },

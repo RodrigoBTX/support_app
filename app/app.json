@@ -14,7 +14,10 @@
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "NSCameraUsageDescription": "Precisamos da câmara para ler QR codes de equipamentos e tirar fotos das intervenções.",
+        "NSPhotoLibraryUsageDescription": "Precisamos de acesso às fotos para anexar imagens da intervenção.",
+        "NSPhotoLibraryAddUsageDescription": "Precisamos de guardar as fotos da intervenção na galeria."
       }
     },
     "android": {
@@ -22,6 +25,21 @@
       "permissions": ["CAMERA"],
       "usesCleartextTraffic": true
     },
-    "plugins": ["expo-secure-store"]
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Precisamos da câmara para ler QR codes de equipamentos."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Precisamos da câmara para tirar fotos das intervenções.",
+          "photosPermission": "Precisamos de acesso às fotos para anexar imagens da intervenção."
+        }
+      ]
+    ]
   }
 }

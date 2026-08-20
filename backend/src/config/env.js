@@ -20,7 +20,9 @@ module.exports = {
   sql: {
     server: required('SQL_SERVER'),
     instanceName: process.env.SQL_INSTANCE || undefined,
-    port: process.env.SQL_PORT ? Number(process.env.SQL_PORT) : 1433,
+    // "0" ou vazio contam como "não definido" — 0 não é uma porta válida,
+    // e ao usar SQL_INSTANCE a porta nem deve ser indicada (ver connectionConfig.js).
+    port: process.env.SQL_PORT && Number(process.env.SQL_PORT) > 0 ? Number(process.env.SQL_PORT) : 1433,
     database: required('SQL_DATABASE'),
     user: required('SQL_USER'),
     password: required('SQL_PASSWORD'),

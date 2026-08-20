@@ -4,7 +4,8 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 
 /**
  * Lê o QR code de um equipamento e navega diretamente para o detalhe.
- * Assume que o código dentro do QR corresponde ao "Codigo" usado por sp_ObterEquipamento.
+ * O texto lido pode ser um mastamp, um serie ou um ref — sp_ObterEquipamentos
+ * resolve qualquer um dos três (ver CONTRATO_SPS.md).
  */
 export default function LeitorQRScreen({ navigation }: any) {
   const [permissao, pedirPermissao] = useCameraPermissions();

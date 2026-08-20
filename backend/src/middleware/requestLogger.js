@@ -6,6 +6,15 @@ const { registarLog } = require('../services/logService');
  * para que o log fique descritivo em vez de só "GET /pedidos".
  */
 function requestLogger(req, res, next) {
+  // O próprio backoffice faz polling a si mesmo a cada 15s (status, sps,
+  // dispositivos, logs, definições) — registar isso só polui a tabela de
+  // logs com ruído sem interesse nenhum para diagnóstico. Não regista GETs
+  // sob /backoffice; o POST /backoffice/sps/reinstalar continua a ser
+  // registado, porque essa é uma ação real.
+  if (req.method === 'GET' && req.originalUrl.startsWith('/backoffice')) {
+    return next();
+  }
+
   const inicio = Date.now();
   res.on('finish', () => {
     const duracaoMs = Date.now() - inicio;
